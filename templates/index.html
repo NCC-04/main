@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Potato Disease Detector</title>
+  <style>
+  :root {
+    --bg1: #0f172a;
+    --bg2: #0b3d91;
+    --card: rgba(255, 255, 255, 0.06);
+    --accent: #ffb86b;
+    --accent-2: #ff7a7a;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --muted: rgba(255, 255, 255, 0.72);
+  }
+
+  /* Page background */
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(800px 400px at 10% 10%, #06203A 0%, transparent 10%),
+                radial-gradient(600px 300px at 90% 90%, #1B3A8A 0%, transparent 15%),
+                linear-gradient(180deg, var(--bg1), var(--bg2));
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  /* Card */
+  .card {
+    width: 100%;
+    max-width: 980px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+    border: 1px solid var(--glass-border);
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Left column */
+  .left {
+    padding: 4px 12px;
+  }
+
+  h1 {
+    margin: 0 0 6px 0;
+    color: #fff;
+    font-size: 24px;
+    letter-spacing: 0.2px;
+  }
+  p.lead {
+    margin: 0 0 18px 0;
+    color: #dbeafe;
+    opacity: 0.9;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: #111;
+    box-shadow: 0 6px 20px rgba(255, 120, 90, 0.12);
+    transition: transform 0.16s ease, box-shadow 0.16s;
+  }
+  .btn.secondary {
+    background: transparent;
+    color: #dbeafe;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+    font-weight: 600;
+  }
+  .btn:active { transform: translateY(1px); }
+
+  input[type=file] { display: none; }
+
+  /* Preview + webcam */
+  .preview {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .frame {
+    width: 320px;
+    height: 240px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  video, img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Right column — result card */
+  .right {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .result-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+  .result-card h3 { margin: 6px 0; color: #fff; }
+  .result-card p { margin: 4px 0; color: var(--muted); }
+
+  .big-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 6px;
+  }
+
+  /* spinner */
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.08);
+    border-top-color: rgba(255,255,255,0.5);
+    animation: spin 1s linear infinite;
+    margin: 8px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* small helpers */
+  .hint { font-size: 13px; opacity: 0.9; color: #cfe8ff; }
+  .muted { font-size: 13px; color: rgba(255,255,255,0.75); }
+
+  footer.small {
+    margin-top: 20px;
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+  }
+
+  /* Tablet layout */
+  @media (max-width: 900px) {
+    .card { grid-template-columns: 1fr; max-width: 720px; }
+    .frame { width: 100%; height: 200px; }
+  }
+
+  /* Mobile layout */
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    h1 { font-size: 20px; }
+    p.lead { font-size: 14px; }
+    .card { padding: 18px; gap: 16px; }
+    .controls { flex-direction: column; gap: 10px; }
+    .btn { width: 100%; font-size: 16px; padding: 14px; }
+    .preview { flex-direction: column; align-items: stretch; }
+    .frame { width: 100%; height: 200px; }
+    .right { padding: 8px; }
+    .big-label { font-size: 16px; }
+  }
+</style>
+
+</head>
+<body>
+  <div class="card" role="application" aria-label="Potato disease detector">
+    <div class="left">
+      <h1>Potato Disease Detector</h1>
+      <p class="lead">Upload a photo or capture from your webcam. The model will return the predicted disease and confidence.</p>
+
+      <div class="controls" aria-hidden="false">
+        <label class="btn" id="uploadBtn">
+          📁 Upload Image
+          <input id="fileInput" type="file" accept="image/*" />
+        </label>
+
+        <button class="btn secondary" id="startCamBtn">📷 Enable Webcam</button>
+        <button class="btn" id="captureBtn" title="Capture & Predict">✨ Capture & Predict</button>
+        <button class="btn secondary" id="predictUploadBtn" title="Predict uploaded file">🔍 Predict Upload</button>
+      </div>
+
+      <div class="preview">
+        <div class="frame" aria-live="polite">
+          <video id="video" autoplay playsinline style="display:none"></video>
+          <img id="previewImg" alt="Selected or captured preview" style="display:none"/>
+          <div id="emptyState" class="muted" style="padding:12px;">No image selected</div>
+        </div>
+
+        <div style="flex:1; min-width:180px;">
+          <div class="hint">Selected file:</div>
+          <div id="fileName" class="muted">—</div>
+
+          <div style="height:18px"></div>
+
+          <div class="hint">Tips</div>
+          <ul class="muted" style="padding-left:18px; margin-top:6px;">
+            <li>Use a clear, centered leaf photo</li>
+            <li>Avoid heavy blur or shadows</li>
+            <li>Prefer daylight for best results</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer class="small">Model: <strong>model_quantized.tflite</strong></footer>
+    </div>
+
+    <aside class="right" aria-label="Prediction result">
+      <div class="result-card" id="resultCard">
+        <h3>Prediction</h3>
+        <div id="resultArea">
+          <div class="muted">No prediction yet</div>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <h3>Preview</h3>
+        <div id="miniPreview" style="height:140px; display:flex; align-items:center; justify-content:center;">
+          <div class="muted">Uploaded / captured image will appear here</div>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <h3>Confidence</h3>
+        <div id="confidenceArea"><div class="muted">—</div></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const predictUploadBtn = document.getElementById('predictUploadBtn');
+
+    const video = document.getElementById('video');
+    const previewImg = document.getElementById('previewImg');
+    const emptyState = document.getElementById('emptyState');
+    const fileNameEl = document.getElementById('fileName');
+
+    const resultArea = document.getElementById('resultArea');
+    const confidenceArea = document.getElementById('confidenceArea');
+    const miniPreview = document.getElementById('miniPreview');
+
+    let stream = null;
+    let lastFile = null;
+
+    // helper to show preview
+    function showPreviewFromBlob(blob, name = 'capture.png') {
+      const url = URL.createObjectURL(blob);
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+      video.style.display = 'none';
+      emptyState.style.display = 'none';
+      fileNameEl.textContent = name;
+      miniPreview.innerHTML = `<img src="${url}" style="max-width:100%; max-height:120px; border-radius:8px;">`;
+      lastFile = new File([blob], name, { type: blob.type });
+    }
+
+    // file upload change
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files[0];
+      if(!f) return;
+      fileNameEl.textContent = f.name;
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewImg.src = reader.result;
+        previewImg.style.display = 'block';
+        video.style.display = 'none';
+        emptyState.style.display = 'none';
+        miniPreview.innerHTML = `<img src="${reader.result}" style="max-width:100%; max-height:120px; border-radius:8px;">`;
+        lastFile = f;
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // Start webcam
+    startCamBtn.addEventListener('click', async () => {
+      if (stream) {
+        // stop
+        stream.getTracks().forEach(t=>t.stop());
+        stream = null;
+        video.style.display = 'none';
+        startCamBtn.textContent = '📷 Enable Webcam';
+        emptyState.style.display = 'block';
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        previewImg.style.display = 'none';
+        emptyState.style.display = 'none';
+        startCamBtn.textContent = '⛔ Stop Webcam';
+        fileNameEl.textContent = 'Webcam (live)';
+        lastFile = null;
+      } catch (err) {
+        alert('Unable to access camera: ' + err.message);
+      }
+    });
+
+    // Capture & Predict from webcam
+    captureBtn.addEventListener('click', async () => {
+      if (!stream && !lastFile) return alert('Enable webcam or upload an image first.');
+      // If webcam active, capture; else if file exists, use file preview as blob
+      if (stream) {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(async blob => {
+          showPreviewFromBlob(blob, 'webcam_capture.png');
+          await sendForPrediction(blob, 'image'); // send as 'image' (webcam)
+        }, 'image/jpeg', 0.9);
+      } else if (lastFile) {
+        await sendForPrediction(lastFile, 'file'); // send existing uploaded file
+      }
+    });
+
+    // Predict uploaded file button
+    predictUploadBtn.addEventListener('click', async () => {
+      if (!lastFile) return alert('Please upload an image first.');
+      await sendForPrediction(lastFile, 'file');
+    });
+
+    // Core: send image to /predict
+    async function sendForPrediction(blobOrFile, fieldName){
+      // show loading
+      resultArea.innerHTML = '<div class="spinner" aria-hidden="true"></div>';
+      confidenceArea.innerHTML = '<div class="muted">Predicting…</div>';
+
+      const form = new FormData();
+      // server expects either "file" (upload) or "image" (webcam). We choose based on fieldName.
+      if (fieldName === 'file') form.append('file', blobOrFile);
+      else form.append('image', blobOrFile);
+
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        // update UI
+        resultArea.innerHTML = `
+          <div class="big-label">${escapeHtml(data.label || data.class || '—')}</div>
+          <div class="muted">${escapeHtml(data.label ? '' : '')}</div>
+        `;
+        confidenceArea.innerHTML = `<div class="big-label">${escapeHtml(data.confidence || data.confidence || '—')}</div>`;
+      } catch (err) {
+        resultArea.innerHTML = `<div class="muted">Prediction failed: ${escapeHtml(err.message)}</div>`;
+        confidenceArea.innerHTML = `<div class="muted">—</div>`;
+      }
+    }
+
+    // small html escape helper
+    function escapeHtml(s){ return String(s || '').replace(/[&<>"']/g, c=>'&#'+c.charCodeAt(0)+';'); }
+
+    // graceful stop camera on page close
+    window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); });
+  </script>
+</body>
+</html>
